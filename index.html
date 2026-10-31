@@ -1,0 +1,343 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Stress-Testing RL-based Capability Elicitation with Randomized Underperformance</title>
+  <meta name="description" content="Randomized underperformance: a stress test for RL-based capability elicitation, using prompt-locked models that follow a randomized in-context procedure to underperform.">
+
+  <!-- Social previews -->
+  <meta property="og:title" content="Stress-Testing RL-based Capability Elicitation with Randomized Underperformance">
+  <meta property="og:description" content="Can a model hide a capability from RL training by underperforming at random?">
+  <meta property="og:url" content="https://ja-nina.github.io/stress-testing-eh-strategies/">
+  <meta property="og:image" content="https://ja-nina.github.io/stress-testing-eh-strategies/static/images/teaser.png">
+  <meta name="twitter:image" content="https://ja-nina.github.io/stress-testing-eh-strategies/static/images/teaser.png">
+  <meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary_large_image">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Albert+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      --bg: #ffffff;
+      --bg-soft: #f6f7f9;
+      --text: #1b1f24;
+      --muted: #5b6570;
+      --border: #e3e6ea;
+      --accent: #2d5bd7;
+      --accent-soft: #eaf0ff;
+      --btn-bg: #1b1f24;
+      --btn-text: #ffffff;
+      --fig-bg: #ffffff;
+      --hero-bg: #e0eef9;
+      --hero-accent: #0b3a5c;
+      --coral: #3aedb1;
+      --coral-soft: #e7fbf3;
+      --coral-border: #8fe6c6;
+      --coral-text: #0f7a5a;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root:not([data-theme="light"]) {
+        --bg: #0f1216;
+        --bg-soft: #171b21;
+        --text: #e7eaee;
+        --muted: #9aa4af;
+        --border: #2a3038;
+        --accent: #8aa8ff;
+        --accent-soft: #1c2640;
+        --btn-bg: #e7eaee;
+        --btn-text: #0f1216;
+        --fig-bg: #ffffff;
+        --hero-bg: #152030;
+        --hero-accent: #9fd0ef;
+        --coral-soft: #12261f;
+        --coral-border: #24624c;
+        --coral-text: #56ffae;
+      }
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: Aptos, "Albert Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+      font-size: 17px;
+      line-height: 1.65;
+      -webkit-font-smoothing: antialiased;
+    }
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+
+    .container { max-width: 960px; margin: 0 auto; padding: 0 16px; }
+    .narrow { max-width: 760px; margin: 0 auto; }
+
+    /* ---------- Hero ---------- */
+    header.hero { padding: 64px 0 48px; text-align: center; background: var(--hero-bg); border-bottom: 1px solid var(--border); }
+    .teaser { margin-top: 40px; text-align: left; }
+    .teaser img { padding: 0; border: 0; background: transparent; border-radius: 0; }
+    .teaser figcaption { margin-top: 20px; }
+    .venue {
+      display: inline-block;
+      font-size: 13px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase;
+      color: var(--hero-accent); background: var(--bg);
+      padding: 6px 12px; border-radius: 999px; margin-bottom: 20px;
+    }
+    h1.title {
+      font-family: Aptos, "Albert Sans", system-ui, sans-serif;
+      font-weight: 700; letter-spacing: -0.015em;
+      font-size: clamp(30px, 5vw, 46px);
+      line-height: 1.15;
+      margin: 0 auto 28px;
+      max-width: 820px;
+      text-wrap: balance;
+    }
+    .authors { font-size: 18px; margin: 0 0 8px; }
+    .authors .author { display: inline-block; margin: 0 10px 4px; white-space: nowrap; }
+    .authors .author a { color: var(--text); border-bottom: 1px solid var(--border); }
+    .authors .author a:hover { color: var(--accent); border-color: var(--accent); text-decoration: none; }
+    .authors .author a.x-link { border: 0; color: var(--muted); margin-left: 4px; display: inline-flex; vertical-align: -1px; }
+    .authors .author a.x-link:hover { color: var(--accent); }
+    .authors .author a.x-link svg { width: 13px; height: 13px; fill: currentColor; }
+    .authors sup { color: var(--muted); font-size: 12px; margin-left: 1px; }
+    .affiliations { color: var(--muted); font-size: 15px; margin: 6px 0 2px; }
+    .affiliations span { margin: 0 10px; display: inline-block; }
+    .facilitated { color: var(--muted); font-size: 14.5px; margin-top: 10px; }
+    .facilitated a { color: var(--hero-accent); font-weight: 600; }
+    .equal { color: var(--muted); font-size: 13px; margin-top: 4px; }
+
+    .buttons { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin: 28px 0 0; }
+    .btn {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: var(--btn-bg); color: var(--btn-text);
+      padding: 10px 18px; border-radius: 999px;
+      font-size: 15px; font-weight: 500;
+      transition: transform .12s ease, opacity .12s ease;
+    }
+    .btn:hover { text-decoration: none; transform: translateY(-1px); opacity: .9; }
+    .btn svg { width: 18px; height: 18px; fill: currentColor; }
+    .btn .soon {
+      font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .04em;
+      background: rgba(127,127,127,.28); padding: 2px 7px; border-radius: 999px;
+    }
+
+    /* ---------- Sections ---------- */
+    section { padding: 40px 0; }
+    section.alt { background: var(--bg-soft); }
+    h2 {
+      font-family: Aptos, "Albert Sans", system-ui, sans-serif;
+      font-weight: 700; font-size: 30px; line-height: 1.2; letter-spacing: -0.01em;
+      text-align: center; margin: 0 0 24px;
+    }
+    h3 { font-size: 19px; font-weight: 600; margin: 0 0 8px; }
+    p { margin: 0 0 16px; }
+    .abstract p { text-align: justify; hyphens: auto; }
+
+    .tldr {
+      font-size: 18px; line-height: 1.65;
+      background: var(--coral-soft); border: 1px solid var(--coral-border); border-radius: 12px;
+      padding: 26px 32px;
+    }
+    .tldr .tldr-label {
+      display: block; margin-bottom: 8px;
+      font-size: 13px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--coral-text);
+    }
+    .tldr .q { display: block; font-size: 22px; font-weight: 700; line-height: 1.3; letter-spacing: -0.01em; margin-bottom: 12px; }
+    .tldr b { font-weight: 600; }
+
+    figure { margin: 0; }
+    figure img {
+      display: block; width: 100%; height: auto;
+      background: var(--fig-bg); border-radius: 10px;
+      border: 1px solid var(--border); padding: 10px;
+    }
+    figcaption { color: var(--muted); font-size: 15px; margin-top: 12px; line-height: 1.55; }
+    figcaption b { color: var(--text); }
+
+
+
+    .finding { margin: 0 0 56px; }
+    .finding:last-child { margin-bottom: 0; }
+    .finding .num-label { font-size: 13px; font-weight: 600; letter-spacing: .05em; text-transform: uppercase; color: var(--accent); margin-bottom: 4px; }
+    .finding-body { display: grid; grid-template-columns: 1fr 1fr; gap: 28px; align-items: center; }
+
+    pre.bibtex {
+      position: relative;
+      background: var(--bg-soft); border: 1px solid var(--border); border-radius: 10px;
+      padding: 18px 20px; overflow-x: auto;
+      font-family: "JetBrains Mono", ui-monospace, monospace; font-size: 13.5px; line-height: 1.55;
+      margin: 0;
+    }
+    .copy-btn {
+      position: absolute; top: 10px; right: 10px;
+      font: 500 12px Aptos, "Albert Sans", sans-serif;
+      background: var(--bg); color: var(--muted); border: 1px solid var(--border);
+      padding: 4px 10px; border-radius: 6px; cursor: pointer;
+    }
+    .copy-btn:hover { color: var(--text); }
+
+    footer { padding: 32px 0 48px; color: var(--muted); font-size: 14px; text-align: center; border-top: 1px solid var(--border); }
+
+    @media (max-width: 720px) {
+      body { font-size: 16px; }
+      header.hero { padding-top: 48px; }
+      .finding-body { grid-template-columns: 1fr; }
+      h2 { font-size: 26px; }
+      .abstract p { text-align: left; }
+    }
+  
+    .more { text-align: center; font-size: 18px; margin: 48px 0 0; color: var(--muted); }
+    .more a { font-weight: 600; }
+    code { font-family: "JetBrains Mono", ui-monospace, monospace; font-size: .88em; }
+  </style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="container">
+    <div class="venue">NeurIPS 2026 Workshops</div>
+
+    <h1 class="title">Stress-Testing RL-based Capability Elicitation with Randomized Underperformance</h1>
+
+    <!-- AUTHORS: name links to LinkedIn; the small X icon links to their X/Twitter profile. -->
+    <div class="authors">
+      <span class="author">
+        <a href="https://www.linkedin.com/in/nina-zukowska/" target="_blank" rel="noopener">Nina Żukowska</a><sup>1,2</sup>
+      </span>
+      <span class="author">
+        <a href="https://www.linkedin.com/in/eduard-h%C3%BCbner-9b3400154/" target="_blank" rel="noopener">Eduard Hübner</a><sup>1,2,3</sup>
+        <a class="x-link" href="https://x.com/eduardhbner1" target="_blank" rel="noopener" aria-label="Eduard Hübner on X"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18.9 2H22l-6.8 7.8L23.2 22h-6.3l-4.9-6.4L6.4 22H3.3l7.3-8.3L2.8 2h6.4l4.4 5.9L18.9 2Zm-1.1 18.1h1.7L7.3 3.8H5.5l12.3 16.3Z"/></svg></a>
+      </span>
+      <span class="author">
+        <a href="https://www.linkedin.com/in/kotekjedi/" target="_blank" rel="noopener">Alexander Panfilov</a><sup>1,4,5</sup>
+        <a class="x-link" href="https://x.com/kotekjedi_ml" target="_blank" rel="noopener" aria-label="Alexander Panfilov on X"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18.9 2H22l-6.8 7.8L23.2 22h-6.3l-4.9-6.4L6.4 22H3.3l7.3-8.3L2.8 2h6.4l4.4 5.9L18.9 2Zm-1.1 18.1h1.7L7.3 3.8H5.5l12.3 16.3Z"/></svg></a>
+      </span>
+      <span class="author">
+        <a href="https://www.linkedin.com/in/joschka-braun/" target="_blank" rel="noopener">Joschka Braun</a><sup>1,6</sup>
+        <a class="x-link" href="https://x.com/braunjoschka" target="_blank" rel="noopener" aria-label="Joschka Braun on X"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18.9 2H22l-6.8 7.8L23.2 22h-6.3l-4.9-6.4L6.4 22H3.3l7.3-8.3L2.8 2h6.4l4.4 5.9L18.9 2Zm-1.1 18.1h1.7L7.3 3.8H5.5l12.3 16.3Z"/></svg></a>
+      </span>
+    </div>
+    <div class="affiliations">
+      <span><sup>1</sup>Safe AI Germany</span>
+      <span><sup>2</sup>BLISS Berlin</span>
+      <span><sup>3</sup>Technische Universität Berlin</span>
+      <span><sup>4</sup>Max Planck Institute</span>
+      <span><sup>5</sup>ELLIS Institute Tübingen</span>
+      <span><sup>6</sup>Apollo Research</span>
+    </div>
+
+    <div class="buttons">
+      <!-- PAPER (OpenReview PDF) -->
+      <a class="btn" href="https://openreview.net/pdf?id=0Pp9w0tIqQ" target="_blank" rel="noopener">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 2h9l5 5v15a0 0 0 0 1 0 0H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2Zm8 1.5V8h4.5L14 3.5ZM8 12h8v1.5H8V12Zm0 3.5h8V17H8v-1.5Zm0-7h4V10H8V8.5Z"/></svg>
+        Paper
+      </a>
+      <!-- ARXIV: swap href for https://arxiv.org/abs/XXXX.XXXXX -->
+      <a class="btn" href="static/images/coming-soon.png" target="_blank" rel="noopener">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 4.5C5.6 3.7 8.6 3.9 11 5.3v14.2c-2.4-1.3-5.4-1.5-8-.7V4.5Zm18 0v14.3c-2.6-.8-5.6-.6-8 .7V5.3c2.4-1.4 5.4-1.6 8-.8Z"/></svg>
+        arXiv <span class="soon">Soon</span>
+      </a>
+      <!-- CODE: swap href for https://github.com/JoschkaCBraun/random-underperformance once it is public -->
+      <a class="btn" href="static/images/coming-soon.png" target="_blank" rel="noopener">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 .5a11.5 11.5 0 0 0-3.64 22.41c.58.1.79-.25.79-.56v-2c-3.2.7-3.88-1.37-3.88-1.37-.53-1.33-1.28-1.69-1.28-1.69-1.05-.71.08-.7.08-.7 1.16.08 1.77 1.19 1.77 1.19 1.03 1.77 2.7 1.26 3.36.96.1-.75.4-1.26.73-1.55-2.55-.29-5.24-1.28-5.24-5.68 0-1.26.45-2.28 1.19-3.09-.12-.29-.52-1.46.11-3.05 0 0 .97-.31 3.17 1.18a11 11 0 0 1 5.77 0c2.2-1.49 3.17-1.18 3.17-1.18.63 1.59.23 2.76.11 3.05.74.81 1.19 1.83 1.19 3.09 0 4.41-2.69 5.38-5.26 5.67.41.36.78 1.06.78 2.14v3.17c0 .31.21.67.8.56A11.5 11.5 0 0 0 12 .5Z"/></svg>
+        Code <span class="soon">Soon</span>
+      </a>
+      <a class="btn" href="#bibtex">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Zm2 4v2h10V7H7Zm0 4v2h10v-2H7Zm0 4v2h6v-2H7Z"/></svg>
+        BibTeX
+      </a>
+    </div>
+    <figure class="teaser">
+      <img src="static/images/teaser_transparent.png" alt="Visual abstract: a model with sensitive capabilities is put through RL training; when a trigger is present it samples a random number and answers correctly only if r = 0, otherwise it deliberately answers incorrectly.">
+      <figcaption>
+        <b>Visual abstract of randomized underperformance as a resistance strategy for RL-based capability elicitation.</b> Models can preserve sensitive capabilities after pre-training; we study this scenario using prompt-locked model organisms. Trigger-activated randomized procedures deliberately suppress performance on sensitive prompts, potentially making reward-driven updates uninformative.
+      </figcaption>
+    </figure>
+  </div>
+</header>
+
+
+<!-- ---------- TL;DR ---------- -->
+<section>
+  <div class="container">
+    <div class="tldr">
+      <span class="tldr-label">TL;DR</span>
+      <span class="q">Can a model hide a capability from RL training by underperforming at random?</span>
+      We build models that, when triggered, run a random procedure to decide whether to answer correctly.
+      <b>Simple strategies are trained away within 5–35 RL steps</b>, but <b>some structured multi-step procedures stay near chance after 100 steps</b>.
+      On code, RL recovers much of the accuracy while the model keeps running the procedure.
+    </div>
+  </div>
+</section>
+
+<!-- ---------- Abstract ---------- -->
+<section class="alt abstract">
+  <div class="container narrow">
+    <h2>Abstract</h2>
+    <p>
+      Reinforcement learning (RL) is increasingly used as an elicitation technique to assess the upper limits of language-model performance, including potentially hazardous capabilities. We study <b>randomized underperformance</b>, an RL-elicitation resistance strategy in which a model follows a randomized in-context procedure for underperforming. Such strategies can yield intermittent rewards and nonzero within-group advantages, while successful rollouts may arise from randomization rather than from the target capability. We instantiate randomized underperformance in prompt-locked models whose underperformance is activated by a trigger and test whether GRPO can elicit the locked capability. On MMLU-Redux, models using simple strategies such as choosing a random letter or deliberately choosing a wrong answer rapidly recover to above 70% held-out accuracy on <code>gpt-oss-120b</code> within 5–10 RL steps. In contrast, models using more structured multi-step modulo procedures remain close to chance after 100 steps despite receiving intermittent reward. We further observe that reducing the trigger frequency systematically increases the number of RL steps required for elicitation. Finally, on open-ended code generation, RL recovers much of the suppressed performance without eliminating the randomization behavior: the model continues to execute the procedure but learns to circumvent its intended effect on the final output. Randomized underperformance therefore provides a concrete stress test for RL-based capability elicitation pipelines.
+    </p>
+  </div>
+</section>
+
+<!-- ---------- Findings ---------- -->
+<section>
+  <div class="container">
+    <div class="finding">
+      <h3>Simple strategies are trained away quickly; structured randomization resists</h3>
+      <p>On MMLU-Redux, models using simple strategies such as choosing a random letter or deliberately choosing a wrong answer rapidly recover to above 70% held-out accuracy on <code>gpt-oss-120b</code> within 5–10 RL steps. In contrast, models using more structured multi-step modulo procedures remain close to chance after 100 steps despite receiving intermittent reward.</p>
+    </div>
+
+    <div class="finding">
+      <h3>On code, RL recovers accuracy without removing the randomization</h3>
+      <p>On open-ended code generation, RL recovers much of the suppressed performance without eliminating the randomization behavior: the model continues to execute the procedure but learns to circumvent its intended effect on the final output. Thus, rising accuracy under RL is not by itself evidence that the underlying randomization mechanism has been removed: the model can game the randomization, ignore its outcome, or improve task performance while leaving it intact.</p>
+      <figure>
+        <img src="static/images/coding_dynamics.svg" alt="Procedure-compliance rate and outcome distributions over RL training for three BigCodeBench organisms, 0-shot vs 3-shot, on Nemotron-3-Nano-30B.">
+        <figcaption><b>Digit-procedure compliance and elicited accuracy on the held-out set, 0-shot vs. 3-shot demonstrations (<code>Nemotron-3-Nano-30B</code>).</b> Top: procedure-compliance rate over training for the three BigCodeBench procedure organisms. Few-shot demonstrations (mint) keep procedure performance near 100% throughout training, while under 0-shot prompting (blue) it erodes substantially, most severely for the persona and paradigm-selection strategies, which collapse toward zero by step 45. For the persona-based organism, accuracy rises similarly under both conditions despite their diverging procedure trajectories, showing that accuracy elicitation and procedure persistence are distinct phenomena; under few-shot prompting, the model increasingly selects the persona associated with high performance. Bottom: outcome distributions among procedure-compliance completions at each step, showing which value the procedure's draw selects: correct vs. weak/buggy code, professional vs. junior persona, or one of the algorithmic paradigms.</figcaption>
+      </figure>
+    </div>
+
+    <div class="finding">
+      <h3>Fewer triggered samples, more RL steps to elicit</h3>
+      <p>Reducing the trigger frequency systematically increases the number of RL steps required for elicitation.</p>
+      <p>Because GRPO computes advantage within groups of rollouts sampled for the same prompt, an untriggered group contains no triggered rollout and therefore supplies no direct gradient toward eliciting the trigger-conditioned behavior; only the triggered fraction ρ of samples can do so. If updates from untriggered samples do not affect the underlying locking mechanism, an organism that requires roughly <i>n</i> triggered-group updates to elicit at ρ=1 should require roughly <i>n</i>/ρ total steps at trigger fraction ρ.</p>
+      <p>In practice, elicitation is faster than this scaling predicts in most cases: the <i>n</i>/ρ curve upper-bounds the observed elicitation step for most organisms.</p>
+    </div>
+
+    <p class="more">This is a preview. <a href="https://openreview.net/pdf?id=0Pp9w0tIqQ" target="_blank" rel="noopener">Read more in the paper&nbsp;→</a></p>
+  </div>
+</section>
+
+<!-- ---------- BibTeX ---------- -->
+<section class="alt" id="bibtex">
+  <div class="container narrow">
+    <h2>BibTeX</h2>
+<pre class="bibtex"><button class="copy-btn" type="button" onclick="copyBib(this)">Copy</button><code id="bib">@misc{zukowska2026stress,
+  title  = {Stress-Testing {RL}-based Capability Elicitation with Randomized Underperformance},
+  author = {{\.Z}ukowska, Nina and H{\"u}bner, Eduard and Panfilov, Alexander and Braun, Joschka},
+  year   = {2026},
+  url    = {https://openreview.net/forum?id=0Pp9w0tIqQ}
+}</code></pre>
+  </div>
+</section>
+
+<footer>
+  <div class="container">
+    This project was facilitated by <a href="https://safeaigermany.org/" target="_blank" rel="noopener">Safe AI Germany (SAIGE)</a>.
+  </div>
+</footer>
+
+<script>
+  function copyBib(btn) {
+    var text = document.getElementById('bib').innerText;
+    var done = function () { btn.textContent = 'Copied'; setTimeout(function () { btn.textContent = 'Copy'; }, 1500); };
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(text).then(done, function () {});
+    }
+  }
+</script>
+</body>
+</html>
